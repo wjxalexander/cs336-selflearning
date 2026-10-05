@@ -1,0 +1,17 @@
+[project]
+name = "cs336"
+version = "0.1.0"
+description = "Self-study for Stanford CS336: Language Modeling from Scratch"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "pytest>=9.1.1",
+]
