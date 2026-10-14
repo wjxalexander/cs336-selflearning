@@ -5,6 +5,7 @@ description = "Self-study for Stanford CS336: Language Modeling from Scratch"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "numpy>=2.5.3",
     "torch>=2.14.1",
     "torchvision>=0.29.1",
 ]
