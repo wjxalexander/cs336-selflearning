@@ -15,11 +15,11 @@ URL = "https://github.com/pytorch/tutorials/raw/main/_static/"
 FILENAME = "mnist.pkl.gz"
 
 if not (PATH / FILENAME).exists():
-        content = requests.get(URL + FILENAME).content
-        (PATH / FILENAME).open("wb").write(content)
+    content = requests.get(URL + FILENAME).content
+    (PATH / FILENAME).open("wb").write(content)
 
 with gzip.open((PATH / FILENAME).as_posix(), "rb") as f:
-        ((x_train, y_train), (x_valid, y_valid), _) = pickle.load(f, encoding="latin-1")
+    ((x_train, y_train), (x_valid, y_valid), _) = pickle.load(f, encoding="latin-1")
 
 pyplot.imshow(x_train[0].reshape((28, 28)), cmap="gray")
 # ``pyplot.show()`` only if not on Colab

@@ -43,8 +43,10 @@ for X, y in test_dataloader:
 
 """Creating Models"""
 device = (
-    "cuda" if torch.cuda.is_available()
-    else "mps" if torch.backends.mps.is_available()
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps"
+    if torch.backends.mps.is_available()
     else "cpu"
 )
 print(f"Using {device} device")
@@ -57,26 +59,31 @@ loss.backward()            # 反向传播：算出每个参数的梯度
 optimizer.step()           # 按梯度更新参数
 optimizer.zero_grad()      # 清空梯度，准备下一批
 """
+
+
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-         # [64, 1, 28, 28]  →  Flatten  →  [64, 784]
-         # 只把每张图自己的 1×28×28 压成 784。
-         # https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html#nn-flatten
+        # [64, 1, 28, 28]  →  Flatten  →  [64, 784]
+        # 只把每张图自己的 1×28×28 压成 784。
+        # https://docs.pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html#nn-flatten
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            #之所以要拉平，是因为后面的 nn.Linear(28*28, 512) 
+            # 之所以要拉平，是因为后面的 nn.Linear(28*28, 512)
             # 只接受一维向量作为每个样本的输入，要求每个样本正好是 784 个数。
-            nn.Linear(28*28, 512),
+            nn.Linear(28 * 28, 512),
             nn.ReLU(),
             nn.Linear(512, 512),
             nn.ReLU(),
-            nn.Linear(512, 10)
+            nn.Linear(512, 10),
         )
+
     def forward(self, x):
         x = self.flatten(x)
         logits = self.linear_relu_stack(x)
         return logits
+
+
 model = NeuralNetwork().to(device)
 # print(model)
 
@@ -90,6 +97,8 @@ test 的 loss：在模型从没见过的数据上算的，反映"学到的东西
 
 两个对比着看很有用。如果 train loss 一直降，test loss 却开始上升，说明模型在死记训练数据，而不是学到了规律，这就是过拟合。
 """
+
+
 def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
@@ -109,6 +118,7 @@ def train(dataloader, model, loss_fn, optimizer):
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
+
 def test(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -122,11 +132,14 @@ def test(dataloader, model, loss_fn):
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(
+        f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+
 
 epochs = 5
 for t in range(epochs):
-    print(f"Epoch {t+1}\n-------------------------------")
+    print(f"Epoch {t + 1}\n-------------------------------")
     train(train_dataloader, model, loss_fn, optimizer)
     test(test_dataloader, model, loss_fn)
 print("Done!")

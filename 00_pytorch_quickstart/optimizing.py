@@ -8,25 +8,26 @@ training_data = datasets.FashionMNIST(
     root="data",
     train=True,
     download=True,
-    transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+    transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
 )
 
 test_data = datasets.FashionMNIST(
     root="data",
     train=False,
     download=True,
-    transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])
+    transform=v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)]),
 )
 
 train_dataloader = DataLoader(training_data, batch_size=64)
 test_dataloader = DataLoader(test_data, batch_size=64)
+
 
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
         self.linear_relu_stack = nn.Sequential(
-            nn.Linear(28*28, 512),
+            nn.Linear(28 * 28, 512),
             nn.ReLU(),
             nn.Linear(512, 512),
             nn.ReLU(),
@@ -38,11 +39,13 @@ class NeuralNetwork(nn.Module):
         logits = self.linear_relu_stack(x)
         return logits
 
+
 model = NeuralNetwork()
 learning_rate = 1e-3
 batch_size = 64
 epochs = 5
 # Initialize the loss function
+
 
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
@@ -82,14 +85,17 @@ def test_loop(dataloader, model, loss_fn):
 
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(
+        f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+    )
+
 
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
 epochs = 10
 for t in range(epochs):
-    print(f"Epoch {t+1}\n-------------------------------")
+    print(f"Epoch {t + 1}\n-------------------------------")
     train_loop(train_dataloader, model, loss_fn, optimizer)
     test_loop(test_dataloader, model, loss_fn)
 print("Done!")
