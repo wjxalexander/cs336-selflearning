@@ -5,6 +5,7 @@ description = "Self-study for Stanford CS336: Language Modeling from Scratch"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "graphviz>=0.21",
     "numpy>=2.5.3",
     "pathlib>=1.0.1",
     "requests>=2.34.2",
