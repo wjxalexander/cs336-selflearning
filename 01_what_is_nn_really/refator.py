@@ -37,7 +37,6 @@ x_train, y_train, x_valid, y_valid = map(
 )
 
 
-
 n, c = x_train.shape
 bs = 64  # batch size
 # [Dataset] TensorDataset pairs x and y, so train_ds[i] returns (x_i, y_i).
@@ -192,6 +191,7 @@ def fit():
 
 # fit()
 
+
 def fit2():
     # [DataLoader] No more index math: iterating yields (xb, yb) batches.
     for xb, yb in train_dl:
@@ -200,7 +200,10 @@ def fit2():
         loss.backward()
         opt.step()
         opt.zero_grad()
+
+
 # fit2()
+
 
 def fit3():
     for epoch in range(epochs):
@@ -221,8 +224,10 @@ def fit3():
             valid_loss = sum(loss_func(model(xb), yb) for xb, yb in valid_dl)
         print(epoch, valid_loss / len(valid_dl))
 
+
 fit3()
 print("after: ", loss_func(model(xb), yb))
+
 
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)  # [nn.Module] forward + [F] loss
@@ -235,6 +240,7 @@ def loss_batch(model, loss_func, xb, yb, opt=None):
         opt.zero_grad()
 
     return loss.item(), len(xb)
+
 
 def fit4(epochs, model, loss_func, opt, train_dl, valid_dl):
     for epoch in range(epochs):
@@ -251,12 +257,14 @@ def fit4(epochs, model, loss_func, opt, train_dl, valid_dl):
 
         print(epoch, val_loss)
 
+
 def get_data(train_ds, valid_ds, bs):
     # [Dataset] in, [DataLoader] out.
     return (
         DataLoader(train_ds, batch_size=bs, shuffle=True),
         DataLoader(valid_ds, batch_size=bs * 2),
     )
+
 
 train_dl, valid_dl = get_data(train_ds, valid_ds, bs)
 model, opt = get_model()

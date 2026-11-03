@@ -9,30 +9,50 @@ class Value:
         self._prev = set(_children)
         self._op = _op
         self.label = label
-        # self.grad = 最终输出 L 对这个节点的导数，∂L/∂self。
-        self.grad = 0.0  # initially zero because: 0 means no effect
+        # * self.grad = 最终输出 L 对这个节点的导数，∂L/∂self。
+        # 初始为 0：一开始没有任何影响，也让 _backward 里的 += 从 0 开始累加
+        self.grad = 0.0
         self._backward = lambda: None
 
     def __repr__(self):
         return f"Value=(data={self.data})"
 
     def __add__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data + other.data, (self, other), "+")
 
         # Backpropagation Chain rule https://en.wikipedia.org/wiki/Chain_rule
+        # ! 用 += 累加而不是 = 覆盖：同一个节点可能被多次使用（如 a + a，
+        # ! 或 a 同时连到多个节点），多元链式法则要求把每条路径的梯度相加
+        # ! b = a + a -> db/da = 2 not 1 神经元里节点被用两次不使用 += 梯度就会算错（不会报错）
         def _backward():
-            self.grad = 1.0 * out.grad
-            other.grad = 1.0 * out.grad
+            self.grad += 1.0 * out.grad
+            other.grad += 1.0 * out.grad
 
         out._backward = _backward
         return out
 
     def __mul__(self, other):
+        other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data * other.data, (self, other), "*")
 
+        # ! += 累加，原因同 __add__
         def _backward():
-            self.grad = out.grad * other.data
-            other.grad = out.grad * self.data
+            self.grad += out.grad * other.data
+            other.grad += out.grad * self.data
+
+        out._backward = _backward
+        return out
+
+    def __rmul__(self, other):  # other * self 2 * val(a)
+        return self * other
+
+    def exp(self):
+        x = self.data
+        out = Value(math.exp(x), (self,), "exp")
+
+        def _backward():
+            self.grad += out.grad * out.data  # 导数*out.grad: chain
 
         out._backward = _backward
         return out
@@ -43,12 +63,40 @@ class Value:
         t_val = (math.exp(2 * raw) - 1) / (math.exp(2 * raw) + 1)
         out = Value(t_val, (self,), "tanh")
 
-        # 1 - o**2
+        # ! 1 - o**2，同样用 += 累加
         def _backward():
-            self.grad = (1 - (t_val**2)) * out.grad
+            self.grad += (1 - (t_val**2)) * out.grad
 
         out._backward = _backward
         return out
+
+    def __truediv__(self, other):  # self / other
+        return self * other**-1
+    
+    def __pow__(self, other):
+        assert isinstance(other, (int, float)), "only supporting int/float powers for now"
+        out = Value(self.data**other, (self,), f'**{other}')
+        def _backward():
+          self.grad += other * (self.data ** (other - 1)) * out.grad
+
+        out._backward = _backward
+        return  out
+    def backward(self):
+        # * toposort: 保证每个节点在它的所有输入之后才加入 topo
+        topo = []
+        visited = set()
+
+        def build_topo(v):
+            if v not in visited:
+                visited.add(v)
+                for child in v._prev:
+                    build_topo(child)
+                topo.append(v)
+
+        build_topo(self)
+        self.grad = 1.0  # ! important: the result grad is 1
+        for node in reversed(topo):
+            node._backward()
 
 
 print(Value(2.0))
@@ -183,17 +231,19 @@ o.label = "o"
 # x1.grad = w1.data * x1w1.grad
 # w1.grad = x1.data * x1w1.grad
 
-o.grad = 1.0 # important
-o._backward()
-n._backward()
-b._backward()
-x1w1x2w2._backward()
-x2w2._backward()
-x1w1._backward()
-x2._backward()
-w2._backward()
-x1._backward()
-w1._backward()
+# o.grad = 1.0
+# o._backward()
+# n._backward()
+# b._backward()
+# x1w1x2w2._backward()
+# x2w2._backward()
+# x1w1._backward()
+# x2._backward()
+# w2._backward()
+# x1._backward()
+# w1._backward()
+
+o.backward()
 
 dot = draw_dot(o)
 dot.render("micrograd_graph_n", format="png", cleanup=True)  # 生成 micrograd_graph.png
