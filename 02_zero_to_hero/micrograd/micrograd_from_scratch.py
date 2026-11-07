@@ -169,3 +169,23 @@ for i in range(20):
 
     for p in n.parameters():
         p.data += -0.05 * p.grad
+    print(i, loss.data)
+
+
+# 跟 micrograd_pytorch.py 对数：同一个神经元，比较 5 个梯度
+x1 = Value(2.0)
+x2 = Value(0.0)
+w1 = Value(-3.0)
+w2 = Value(1.0)
+bias = Value(6.8813735870195432)
+
+o = (x1 * w1 + x2 * w2 + bias).tanh()
+o.backward()
+
+print(o.data)
+print("---")
+print("x1", x1.data, x1.grad)
+print("w1", w1.data, w1.grad)
+print("x2", x2.data, x2.grad)
+print("w2", w2.data, w2.grad)
+print("bias", bias.data, bias.grad)
