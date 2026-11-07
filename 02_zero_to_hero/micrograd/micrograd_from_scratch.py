@@ -22,7 +22,7 @@ class Value:
 
         def _backward():
             self.grad += 1.0 * out.grad
-            other.grad += 1.0 * self.grad
+            other.grad += 1.0 * out.grad
 
         # 犯错：这里backward 赋值给了self
         out._backward = _backward
@@ -46,7 +46,7 @@ class Value:
 
     def exp(self):
         x = self.data
-        out = Value(math.exp(x), (self))
+        out = Value(math.exp(x), (self,))
 
         def _backward():
             self.grad += out.grad * out.data
@@ -59,7 +59,7 @@ class Value:
         out = Value((math.exp(2 * x) - 1) / (math.exp(2 * x) + 1), (self,))
 
         def _backard():
-            self.grad += 1 - out.data**2
+            self.grad += (1 - out.data**2) * out.grad
 
         out._backward = _backard
         return out
@@ -78,6 +78,16 @@ class Value:
 
         out._backward = _backward
         return out
+
+
+    def __neg__(self):  # -self
+        return self * -1
+
+    def __sub__(self, other):  # self - other
+        return self + (-other)
+
+    def __radd__(self, other):  # other + self
+        return self + other
     def backward(self):
         topo = []
         visited = set()
@@ -98,7 +108,7 @@ class Value:
 
 class Neuron:
     def __init__(self, number_of_inputs):
-        self.w = [Value(random.uniform(-1,1)) for _ in range(number_of_inputs)] # 构建矩阵
+        self.w = [Value(random.uniform(-1,1)) for _ in range(number_of_inputs)] 
         self.b = Value(random.uniform(-1,1))
     def __call__(self, x):
         out = 0.0
@@ -117,7 +127,7 @@ class Layer:
         out = [neuron(x) for neuron in self.neurons]
         return out if len(out) > 1 else out[0]
 
-    def paramters(self):
+    def parameters(self):
         params = []
         for n in self.neurons:
             params.extend(n.parameters())
@@ -138,3 +148,24 @@ class MLP:
         for n in self.layers:
             params.extend(n.parameters())
         return params
+
+
+n = MLP(3, [4, 4, 1])
+xs = [
+    [2.0, 3.0, -1.0],
+    [3.0, -1.0, 0.5],
+    [0.5, 1.0, 1.0],
+    [1.0, 1.0, -1.0],
+]
+ys = [1.0, -1.0, -1.0, 1.0]  # desired targets
+for i in range(20):
+    ypred = [n(x) for x in xs]
+    loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))
+
+    for layer in n.layers:
+        layer.grad = 0
+    loss.backward()
+
+    for p in n.parameters():
+        p.data += -0.05 * p.grad
+        
