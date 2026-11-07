@@ -215,7 +215,7 @@ ys = [1.0, -1.0, -1.0, 1.0]  # desired targets
 #     # ! minus: grad points to loss increase, step opposite to reduce loss
 #     # p.data = 1.0, p.grad = 2.0: p up raises loss. 1.0 + -0.01 * 2.0 = 0.98, p down
 #     # p.data = 1.0, p.grad = -2.0: p up lowers loss. 1.0 + -0.01 * -2.0 = 1.02, p up
-#     p.data += -0.01 * p.grad 
+#     p.data += -0.01 * p.grad
 
 for k in range(20):
     ypred = [n(x) for x in xs]
@@ -241,11 +241,10 @@ for k in range(20):
     # at minimum p = 0: true grad 0, p should stop. Stale grad keeps moving it past minimum
     # zero clears earlier rounds only: paths and samples in one round still add with +=
     for p in n.parameters():
-      p.grad = 0.0
+        p.grad = 0.0
     loss.backward()
 
-
-    #update
+    # update
     for p in n.parameters():
         p.data += -0.05 * p.grad
 
