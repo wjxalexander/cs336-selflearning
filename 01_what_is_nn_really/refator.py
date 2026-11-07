@@ -268,4 +268,4 @@ def get_data(train_ds, valid_ds, bs):
 
 train_dl, valid_dl = get_data(train_ds, valid_ds, bs)
 model, opt = get_model()
-fit(epochs, model, loss_func, opt, train_dl, valid_dl)
+fit4(epochs, model, loss_func, opt, train_dl, valid_dl)
