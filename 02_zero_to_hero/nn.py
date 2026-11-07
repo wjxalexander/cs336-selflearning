@@ -231,10 +231,22 @@ for k in range(20):
     # ygt = 1.0, ypred = 1.5: dloss/dypred = 1.0, prediction too high, lower it
     # ygt = 1.0, ypred = 1.0: dloss/dypred = 0.0, prediction right, no change
     # loss sums all samples, so p.grad sums each sample's contribution
+
+    # ! zero grads before backward: p.grad must reflect only this round
+    # _backward uses +=, so without zeroing every earlier round's grad adds in
+    # no zero -> round 3: p.grad = g1 + g2 + g3, g1 and g2 come from old params
+    # why only this round: a grad is the slope at the params it was computed on
+    # params update each round, so an old grad describes a position p already left
+    # loss = p**2, lr = 0.1: p = 3.0, grad 6.0 -> p = 2.4, true grad 4.8, no zero uses 10.8
+    # at minimum p = 0: true grad 0, p should stop. Stale grad keeps moving it past minimum
+    # zero clears earlier rounds only: paths and samples in one round still add with +=
+    for p in n.parameters():
+      p.grad = 0.0
     loss.backward()
+
 
     #update
     for p in n.parameters():
-        p.data += -0.03 * p.grad
+        p.data += -0.05 * p.grad
 
     print(k, loss.data)
