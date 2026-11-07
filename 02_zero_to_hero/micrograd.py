@@ -60,7 +60,8 @@ class Value:
     # Hyperbolic tangent: https://en.wikipedia.org/wiki/Hyperbolic_functions
     def tanh(self):
         raw = self.data
-        t_val = (math.exp(2 * raw) - 1) / (math.exp(2 * raw) + 1)
+        exp_val = math.exp(2 * raw)
+        t_val = (exp_val - 1) / (exp_val + 1)
         out = Value(t_val, (self,), "tanh")
 
         # ! 1 - o**2，同样用 += 累加
@@ -72,15 +73,28 @@ class Value:
 
     def __truediv__(self, other):  # self / other
         return self * other**-1
-    
+
     def __pow__(self, other):
-        assert isinstance(other, (int, float)), "only supporting int/float powers for now"
-        out = Value(self.data**other, (self,), f'**{other}')
+        assert isinstance(other, (int, float)), (
+            "only supporting int/float powers for now"
+        )
+        out = Value(self.data**other, (self,), f"**{other}")
+
         def _backward():
-          self.grad += other * (self.data ** (other - 1)) * out.grad
+            self.grad += other * (self.data ** (other - 1)) * out.grad
 
         out._backward = _backward
-        return  out
+        return out
+
+    def __neg__(self):  # -self
+        return self * -1
+
+    def __sub__(self, other):  # self - other
+        return self + (-other)
+
+    def __radd__(self, other):  # other + self
+        return self + other
+
     def backward(self):
         # * toposort: 保证每个节点在它的所有输入之后才加入 topo
         topo = []
