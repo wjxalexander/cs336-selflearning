@@ -131,6 +131,13 @@ class Neuron:
         out = activation.tanh()
         return out
 
+    def parameters(self):
+        # * trainable Values: [w1, ..., wn, b]. Neuron(3) -> 4 params
+        # same objects, not copies: p.data += ... updates the network
+        # p.data = current value. p.grad = dloss/dp, set by loss.backward()
+        # not params: input x (data), intermediate results (rebuilt each forward pass)
+        return [*self.w, self.b]
+
 
 class Layer:
     def __init__(self, nin, nout):
@@ -144,6 +151,14 @@ class Layer:
         outs = [neuron(x) for neuron in self.neurons]
         return outs[0] if len(outs) == 1 else outs
 
+    def parameters(self):
+        # ! flat list of Values: extend, not append. append nests lists, p.data fails
+        # Layer(3, 4) -> 4 * (3 + 1) = 16 params
+        params = []
+        for neuron in self.neurons:
+            params.extend(neuron.parameters())
+        return params
+
 
 class MLP:
     def __init__(self, nin, nouts):
@@ -155,7 +170,8 @@ class MLP:
         # for i, nout in enumerate(nouts_with_nin[1:], start=1):
         #     self.layers.append(Layer(nouts_with_nin[i - 1], nout))
         self.layers = [
-            Layer(nouts_with_nin[i], nouts_with_nin[i + 1]) for i in range(len(nouts_with_nin) - 1)
+            Layer(nouts_with_nin[i], nouts_with_nin[i + 1])
+            for i in range(len(nouts_with_nin) - 1)
         ]
 
     def __call__(self, x):
@@ -165,6 +181,60 @@ class MLP:
             x = layer(x)
         return x
 
-x = [2.0, 3.0, -1.0]
-n = MLP(3, [4,4,1])
-print(n(x))
+    def parameters(self):
+        # all layers' params, flat. MLP(3, [4, 4, 1]) -> 16 + 20 + 5 = 41 params
+        return [p for layer in self.layers for p in layer.parameters()]
+
+
+# x = [2.0, 3.0, -1.0]
+# n = MLP(3, [4,4,1])
+# print(n(x))
+n = MLP(3, [4, 4, 1])
+print(n.parameters())
+xs = [
+    [2.0, 3.0, -1.0],
+    [3.0, -1.0, 0.5],
+    [0.5, 1.0, 1.0],
+    [1.0, 1.0, -1.0],
+]
+ys = [1.0, -1.0, -1.0, 1.0]  # desired targets
+
+# ypred = [n(x) for x in xs]
+# print(ypred)
+
+# # the loss
+# loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))
+
+# # print(loss)
+
+# loss.backward()
+
+# # print(n.layers[0].neurons[0].w[0].grad)
+
+# for p in n.parameters():
+#     # ! minus: grad points to loss increase, step opposite to reduce loss
+#     # p.data = 1.0, p.grad = 2.0: p up raises loss. 1.0 + -0.01 * 2.0 = 0.98, p down
+#     # p.data = 1.0, p.grad = -2.0: p up lowers loss. 1.0 + -0.01 * -2.0 = 1.02, p up
+#     p.data += -0.01 * p.grad 
+
+for k in range(20):
+    ypred = [n(x) for x in xs]
+    loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))
+
+    # ! backward on loss, not ypred: goal is lower loss, so each param needs dloss/dp
+    # loss holds prediction and target: w, b, x -> ypred -> (ypred - ygt)**2 -> loss
+    # ypred.backward() gives only dypred/dp: how p moves prediction, not if it is right
+    # chain rule: dloss/dp = dloss/dypred * dypred/dp
+    #   dloss/dypred = 2 * (ypred - ygt): which way prediction should move
+    #   dypred/dp: how p affects prediction
+    # ygt = 1.0, ypred = 0.5: dloss/dypred = -1.0, prediction too low, raise it
+    # ygt = 1.0, ypred = 1.5: dloss/dypred = 1.0, prediction too high, lower it
+    # ygt = 1.0, ypred = 1.0: dloss/dypred = 0.0, prediction right, no change
+    # loss sums all samples, so p.grad sums each sample's contribution
+    loss.backward()
+
+    #update
+    for p in n.parameters():
+        p.data += -0.03 * p.grad
+
+    print(k, loss.data)
