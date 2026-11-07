@@ -71,7 +71,7 @@ class Value:
         assert isinstance(other, (int, float)), (
             "only supporting int/float powers for now"
         )
-        out = Value(self.data**other, (self,), f"**{other}")
+        out = Value(self.data**other, (self,))
 
         def _backward():
             self.grad += other * (self.data ** (other - 1)) * out.grad
@@ -115,7 +115,7 @@ class Neuron:
         for i,v in enumerate(x):
             out += self.w[i] * v
         out += self.b
-        return out
+        return out.tanh()
     def parameters(self):
         return [*self.w, self.b]
 
@@ -138,7 +138,7 @@ class MLP:
         full_arr = [nin, *nouts]
         self.layers = [Layer(full_arr[v], full_arr[v+1]) for v in range(len(nouts))]
     def __call__(self, x):
-        assert len(self.layers) < 1, ("layers cannot be zero")
+        assert len(self.layers) > 0, ("layers cannot be zero")
         out = self.layers[0](x)
         for i in range(len(self.layers) - 1):
             out = self.layers[i + 1](out)
@@ -162,10 +162,10 @@ for i in range(20):
     ypred = [n(x) for x in xs]
     loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))
 
-    for layer in n.layers:
-        layer.grad = 0
+    for p in n.parameters:
+        # 为什么只用重置 layer 的就可以了
+        p.grad = 0
     loss.backward()
 
     for p in n.parameters():
         p.data += -0.05 * p.grad
-        
