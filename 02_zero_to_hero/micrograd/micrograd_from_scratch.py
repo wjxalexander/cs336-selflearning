@@ -162,7 +162,7 @@ for i in range(20):
     ypred = [n(x) for x in xs]
     loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))
 
-    for p in n.parameters:
+    for p in n.parameters():
         # 为什么只用重置 layer 的就可以了
         p.grad = 0
     loss.backward()
