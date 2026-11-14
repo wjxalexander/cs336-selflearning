@@ -146,3 +146,10 @@ for word in words[:3]:
 #   tensor(38.7856) tensor(2.4241)
 nll = -log_likelihood
 print(nll, nll / n)
+
+# GOAL: maximize likelihood of the data w.r.t. model parameters (statistical modeling)
+# equivalent to maximizing the log likelihood (because log is monotonic)
+# equivalent to minimizing the negative log likelihood
+# equivalent to minimizing the average negative log likelihood
+
+# log(a*b*c) = log(a) + log(b) + log(c)
