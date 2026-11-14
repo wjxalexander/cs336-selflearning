@@ -9,8 +9,16 @@ SEP = "."
 # why 27 : a-z + SEP tag
 SIZE = 27
 
-N = torch.zeros((SIZE, SIZE), dtype=torch.int32)
-
+# N = torch.zeros((SIZE, SIZE), dtype=torch.int32)
+# 为什么从 1 开始计数：模型平滑（加一平滑 / Laplace smoothing）
+# - 从 0 开始的话，数据里没出现过的 bigram（如 "jq"）次数为 0 -> 概率 P = 0
+#   -> log(0) = -inf -> nll = inf，一个没见过的组合就让整个 loss 变成无穷大
+#   （视频里 "andrejq" 的例子）
+# - 每个组合先算 1 次"假"出现，概率最小也是 1/(这一行总次数)，loss 就是有限值
+# - 等价于视频里的 P = (N + 1).float()；所以后面 P = N.float() 不要再 +1
+# - 这个数可调：越大分布越平（越接近均匀乱猜），越小越贴近原始计数；
+#   22 万多个 bigram 里加 1 对常见组合几乎没影响，主要是把 0 变成很小的正数
+N = torch.ones((SIZE, SIZE), dtype=torch.int32)
 chars = sorted(list(set("".join(words))))
 stoi = {c: i + 1 for i, c in enumerate(chars)}
 
@@ -27,7 +35,6 @@ for word in words:
 # plt.show()
 
 itos = {s: i for i, s in stoi.items()}
-print("ittt", itos[0])
 # print(itos)
 # plt.figure(figsize=(16,16))
 # plt.imshow(N, cmap='Blues')
@@ -112,12 +119,12 @@ for i in range(10):
 
 log_likelihood = 0.0
 n = 0
-for word in words[:3]:
-    str = [SEP] + list(word) + [SEP]
-    for ch1, ch2 in zip(str, str[1:]):
+for word in words:
+    seq = [SEP] + list(word) + [SEP]
+    for ch1, ch2 in zip(seq, seq[1:]):
         idx1 = stoi[ch1]
         idx2 = stoi[ch2]
-        p = P[idx1][idx2]
+        p = P[idx1,idx2]
         log_prob = torch.log(p)
 
         # 为什么是加不是乘：log(a*b) = log(a) + log(b)
@@ -130,7 +137,7 @@ for word in words[:3]:
         # 2. 好求导：后面 loss = 负对数似然的平均值（-log_likelihood / n），求和比连乘好求导
         log_likelihood += log_prob
         n+=1
-        print(f"{ch1}{ch2}", p, log_prob)
+        # print(f"{ch1}{ch2}", p, log_prob)
 
 # nll（negative log likelihood，负对数似然）= -log_likelihood
 # - log_likelihood 是一堆 log(p) 相加，p 在 0~1 之间，所以它总是 <= 0，越接近 0 越好
