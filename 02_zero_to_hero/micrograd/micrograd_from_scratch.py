@@ -79,7 +79,6 @@ class Value:
         out._backward = _backward
         return out
 
-
     def __neg__(self):  # -self
         return self * -1
 
@@ -88,9 +87,11 @@ class Value:
 
     def __radd__(self, other):  # other + self
         return self + other
+
     def backward(self):
         topo = []
         visited = set()
+
         # dfs
         def _helper(v):
             if v not in visited:
@@ -98,6 +99,7 @@ class Value:
                 for prev in v._prev:
                     _helper(prev)
                 topo.append(v)
+
         _helper(self)
         # 犯错:这里没写
         self.grad = 1.0
@@ -108,16 +110,19 @@ class Value:
 
 class Neuron:
     def __init__(self, number_of_inputs):
-        self.w = [Value(random.uniform(-1,1)) for _ in range(number_of_inputs)] 
-        self.b = Value(random.uniform(-1,1))
+        self.w = [Value(random.uniform(-1, 1)) for _ in range(number_of_inputs)]
+        self.b = Value(random.uniform(-1, 1))
+
     def __call__(self, x):
         out = 0.0
-        for i,v in enumerate(x):
+        for i, v in enumerate(x):
             out += self.w[i] * v
         out += self.b
         return out.tanh()
+
     def parameters(self):
         return [*self.w, self.b]
+
 
 class Layer:
     def __init__(self, number_of_inputs, number_of_outputs):
@@ -133,16 +138,19 @@ class Layer:
             params.extend(n.parameters())
         return params
 
+
 class MLP:
     def __init__(self, nin, nouts):
         full_arr = [nin, *nouts]
-        self.layers = [Layer(full_arr[v], full_arr[v+1]) for v in range(len(nouts))]
+        self.layers = [Layer(full_arr[v], full_arr[v + 1]) for v in range(len(nouts))]
+
     def __call__(self, x):
-        assert len(self.layers) > 0, ("layers cannot be zero")
+        assert len(self.layers) > 0, "layers cannot be zero"
         out = self.layers[0](x)
         for i in range(len(self.layers) - 1):
             out = self.layers[i + 1](out)
         return out
+
     def parameters(self):
         params = []
         for n in self.layers:
