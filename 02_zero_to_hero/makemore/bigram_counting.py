@@ -99,7 +99,7 @@ P = N.float()
 sum_by_row = P.sum(dim=1, keepdim=True)
 print(sum_by_row.shape)
 
-P = P/sum_by_row
+P = P / sum_by_row
 # must be 1 normalized 不是1 就错啦
 
 print(P[1].sum())
@@ -124,7 +124,7 @@ for word in words:
     for ch1, ch2 in zip(seq, seq[1:]):
         idx1 = stoi[ch1]
         idx2 = stoi[ch2]
-        p = P[idx1,idx2]
+        p = P[idx1, idx2]
         log_prob = torch.log(p)
 
         # 为什么是加不是乘：log(a*b) = log(a) + log(b)
@@ -136,7 +136,7 @@ for word in words:
         #    取对数后只是一堆负数相加，数值稳定
         # 2. 好求导：后面 loss = 负对数似然的平均值（-log_likelihood / n），求和比连乘好求导
         log_likelihood += log_prob
-        n+=1
+        n += 1
         # print(f"{ch1}{ch2}", p, log_prob)
 
 # nll（negative log likelihood，负对数似然）= -log_likelihood
