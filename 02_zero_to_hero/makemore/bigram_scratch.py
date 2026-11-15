@@ -34,7 +34,8 @@ W = torch.randn((27, 27), requires_grad=True)
 for i in range(100):
     x_encode = F.one_hot(xs, 27).float()
     # FORWARD: 得到 "计数"
-    count = (x_encode @ W).exp()
+    logits = x_encode @ W
+    count = logits.exp()
 
     # soft sum
     p = count / count.sum(dim=1, keepdim=True)
@@ -43,7 +44,8 @@ for i in range(100):
     # 但是 自己还是不太明白这里为什么能做为 lossfunction
     fine = (0.01 * (W ** 2)).mean()
     loss = -p[torch.arange(num), ys].log().mean() + (0.01 * (W**2)).mean()
-    print(f"fine is: {fine}, loss is: {loss}")
+    loss_ref = F.cross_entropy(logits, ys)
+    print(f"fine is: {fine}, loss is: {loss}, loss ref is: {loss_ref + fine}")
     # print(f"loss value is: {loss.item()}")
     # reset W grad
     W.grad = None
