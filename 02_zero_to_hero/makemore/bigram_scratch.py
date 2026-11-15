@@ -42,7 +42,7 @@ for i in range(100):
 
     # loss function: 对数相加等于 p1 * p2 * p3
     # 但是 自己还是不太明白这里为什么能做为 lossfunction
-    fine = (0.01 * (W ** 2)).mean()
+    fine = (0.01 * (W**2)).mean()
     loss = -p[torch.arange(num), ys].log().mean() + (0.01 * (W**2)).mean()
     loss_ref = F.cross_entropy(logits, ys)
     print(f"fine is: {fine}, loss is: {loss}, loss ref is: {loss_ref + fine}")

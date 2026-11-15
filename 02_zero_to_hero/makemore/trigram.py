@@ -29,26 +29,27 @@ xs = torch.tensor(xs)
 ys = torch.tensor(ys)
 print(f"xs shape is: {xs.shape}, ys shape is: {ys.shape}")
 
-w = torch.randn((27,27,27), requires_grad=True)
+w = torch.randn((27, 27, 27), requires_grad=True)
 
-for _i in range(100):
+for _i in range(300):
     # for id1, id2 in xs:
     #     print(w[id1, id2])
     #     log_count.append(w[id1, id2])
-    #forward
-    logits = w[xs[:,0], xs[:,1]]
-    
-    #loss
+    # forward
+    logits = w[xs[:, 0], xs[:, 1]]
+    print(logits.shape) #torch.Size([228146, 27])
+    # loss
+    # soft max
     # num = xs.shape[0]
     # count_exp = logits.exp()
     # p = count_exp / count_exp.sum(1, keepdim=True)
     # fine = (0.01 * (w ** 2)).mean()
     # loss = -p[torch.arange(num), ys].log().mean() + (0.01 * (w**2)).mean()
-    loss =F.cross_entropy(logits, ys)
+    loss = F.cross_entropy(logits, ys) + (0.5 * (w**2)).mean()
     w.grad = None
     loss.backward()
     print(f"loss is {loss}")
-    w.data += -(20 * w.grad)
+    w.data += -(50 * w.grad)
 
 
 for i in range(5):
@@ -58,10 +59,10 @@ for i in range(5):
         logits = w[idx[0], idx[1]]
         # cout_exp = logits.exp()
         # p = cout_exp / cout_exp.sum()
-        p = F.softmax(logits,dim=0)
+        p = F.softmax(logits, dim=0)
         next_idx = torch.multinomial(p, num_samples=1, replacement=True).item()
         if next_idx == 0:
             break
         out.append(itos[next_idx])
-        idx=[idx[1], next_idx]
+        idx = [idx[1], next_idx]
     print("".join(out))
