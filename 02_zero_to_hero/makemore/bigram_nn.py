@@ -20,7 +20,7 @@ for word in words:
         # print(ch1, ch2)
         xs.append(ix1)
         ys.append(ix2)
-
+print(xs, ys)
 xs = torch.tensor(xs)
 ys = torch.tensor(ys)
 # nelement()：张量里元素的总个数，这里就是 bigram 训练样本的数量（全量数据约 22.8 万）
@@ -176,24 +176,22 @@ for k in range(100):
 g = torch.Generator().manual_seed(2147483647)
 
 for i in range(5):
-  
-  out = []
-  ix = 0
-  while True:
-    
-    # ----------
-    # BEFORE:
-    #p = P[ix]
-    # ----------
-    # NOW:
-    xenc = F.one_hot(torch.tensor([ix]), num_classes=27).float()
-    logits = xenc @ w # predict log-counts
-    counts = logits.exp() # counts, equivalent to N
-    p = counts / counts.sum(1, keepdims=True) # probabilities for next character
-    # ----------
-    
-    ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
-    out.append(itos[ix])
-    if ix == 0:
-      break
-  print(''.join(out))
+    out = []
+    ix = 0
+    while True:
+        # ----------
+        # BEFORE:
+        # p = P[ix]
+        # ----------
+        # NOW:
+        xenc = F.one_hot(torch.tensor([ix]), num_classes=27).float()
+        logits = xenc @ w  # predict log-counts
+        counts = logits.exp()  # counts, equivalent to N
+        p = counts / counts.sum(1, keepdims=True)  # probabilities for next character
+        # ----------
+
+        ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
+        out.append(itos[ix])
+        if ix == 0:
+            break
+    print("".join(out))
