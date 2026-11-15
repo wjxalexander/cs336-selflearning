@@ -30,14 +30,14 @@ ys = torch.tensor(ys)
 print(f"xs shape is: {xs.shape}, ys shape is: {ys.shape}")
 
 w = torch.randn((27, 27, 27), requires_grad=True)
-
+# finnal_loss= 1
 for _i in range(300):
     # for id1, id2 in xs:
     #     print(w[id1, id2])
     #     log_count.append(w[id1, id2])
     # forward
     logits = w[xs[:, 0], xs[:, 1]]
-    print(logits.shape) #torch.Size([228146, 27])
+    # print(logits.shape) #torch.Size([228146, 27])
     # loss
     # soft max
     # num = xs.shape[0]
@@ -45,12 +45,14 @@ for _i in range(300):
     # p = count_exp / count_exp.sum(1, keepdim=True)
     # fine = (0.01 * (w ** 2)).mean()
     # loss = -p[torch.arange(num), ys].log().mean() + (0.01 * (w**2)).mean()
-    loss = F.cross_entropy(logits, ys) + (0.5 * (w**2)).mean()
+    loss = F.cross_entropy(logits, ys) + (0.01 * (w**2)).mean()
+    finnal_loss = loss.item()
     w.grad = None
     loss.backward()
-    print(f"loss is {loss}")
-    w.data += -(50 * w.grad)
+    # print(f"loss is {loss}")
+    w.data += -(100 * w.grad)
 
+print(f"finnal_loss is {finnal_loss}")
 
 for i in range(5):
     out = []
