@@ -172,3 +172,28 @@ for k in range(100):
     # - 梯度指向 loss 上升最快的方向，所以要减去它
     # - 改 w.data 而不是 w：这一步只是更新数值，不应该被 autograd 记录
     w.data += -50 * w.grad
+
+g = torch.Generator().manual_seed(2147483647)
+
+for i in range(5):
+  
+  out = []
+  ix = 0
+  while True:
+    
+    # ----------
+    # BEFORE:
+    #p = P[ix]
+    # ----------
+    # NOW:
+    xenc = F.one_hot(torch.tensor([ix]), num_classes=27).float()
+    logits = xenc @ w # predict log-counts
+    counts = logits.exp() # counts, equivalent to N
+    p = counts / counts.sum(1, keepdims=True) # probabilities for next character
+    # ----------
+    
+    ix = torch.multinomial(p, num_samples=1, replacement=True, generator=g).item()
+    out.append(itos[ix])
+    if ix == 0:
+      break
+  print(''.join(out))
