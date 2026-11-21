@@ -60,8 +60,9 @@ for i in range(5):
     # 只要一个字母
     while True:
         x_encode = F.one_hot(torch.tensor([ix]), 27).float()
-        count = (x_encode @ W).exp()
-        p = count / count.sum(dim=1, keepdim=True)
+        # count = (x_encode @ W).exp()
+        # p = count / count.sum(dim=1, keepdim=True)
+        p = F.softmax(x_encode@W, dim=1)
         # print(p)
         next_ix = torch.multinomial(p, num_samples=1, replacement=True).item()
         out.append(itos[next_ix])
