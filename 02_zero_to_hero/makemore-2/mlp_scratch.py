@@ -56,14 +56,18 @@ def mlp(words):
     # layer two: 输出27的字符
     W2 = torch.randn((num_of_nerons, 27), requires_grad=True)
     B2 = torch.randn(27, requires_grad=True)
-    learning_rate = 0.01
+    learning_rate = 0.1
     parameters = [C, W1, B1, W2, B2]
     final_loss = 0.0
-    for i in range(5):
+    for i in range(30000):
+        """mini batch: 随机取出几个"""
+        idx = torch.randint(0, train_set.shape[0], (64,))
+        train_mini_batch = train_set[idx]
+        target_mini_batch = target_set[idx]
         """forward: """
         """first layer: tanh"""
         # 取出所有的train set 的对应的未被优化的值
-        embeding = C[train_set]
+        embeding = C[train_mini_batch]
         """
         W1.shape -> [6, 100] 
         embeding.shape -> [n, 3, 2]
@@ -79,11 +83,10 @@ def mlp(words):
         # back progation 准备工作
         for param in parameters:
             param.grad = None
-        loss = F.cross_entropy(logits, target_set)
-        final_loss = loss
+        loss = F.cross_entropy(logits, target_mini_batch)
+        final_loss = loss.item()
         loss.backward()
         for param in parameters:
-            # print(param.grad)
             param.data += -(learning_rate * param.grad)
     print(f"final loss is: {final_loss}")
     return [C, W1, B1, W2, B2]
@@ -118,5 +121,5 @@ PyTorch 每做一次运算就在计算图里记一个节点。C → embeding →
 修法：把 embedding 查表和 view 挪进循环，让每轮前向都从 C 重新建完整的图：
 
 """
-for name in word_generator(words[:10]):
+for name in word_generator(words):
     print(name)
