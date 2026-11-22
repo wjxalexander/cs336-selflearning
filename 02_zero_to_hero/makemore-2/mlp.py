@@ -161,17 +161,20 @@ def build_dataset(words):
     x = torch.tensor(x)
     y = torch.tensor(y)
     return x, y
+
+
 import random
+
 random.seed(42)
 random.shuffle(words)
-n1 = int(0.8*len(words))
-n2 = int(0.9*len(words))
+n1 = int(0.8 * len(words))
+n2 = int(0.9 * len(words))
 
 Xtr, Ytr = build_dataset(words[:n1])
 Xdev, Ydev = build_dataset(words[n1:n2])
 Xte, Yte = build_dataset(words[n2:])
 
-g = torch.Generator().manual_seed(2147483647) # for reproducibility
+g = torch.Generator().manual_seed(2147483647)  # for reproducibility
 C = torch.randn((27, 10), generator=g)
 W1 = torch.randn((30, 200), generator=g)
 b1 = torch.randn(200, generator=g)
