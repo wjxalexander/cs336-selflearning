@@ -99,7 +99,7 @@ x_train, y_train = convert_to_train_set(words[:len1])
 x_dev, y_dev     = convert_to_train_set(words[len1:len2])
 x_test, y_test   = convert_to_train_set(words[len2:])
 
-trained_mlp = mlp(x_dev, y_dev)
+trained_mlp = mlp(x_train, y_train)
 
 
 def calculate_loss(x_set, y_set):
