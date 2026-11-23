@@ -1,3 +1,5 @@
+import random
+
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt  # for making figures
@@ -16,6 +18,9 @@ stoi["."] = 0
 itos = {i: s for s, i in stoi.items()}
 
 num_of_chars = 3
+embeding_dimension = 10
+num_of_input = num_of_chars * embeding_dimension
+num_of_nerons = 200
 
 
 def convert_to_train_set(words):
@@ -40,16 +45,12 @@ def convert_to_train_set(words):
 
 
 x, y = convert_to_train_set(words[:2])
-print(x.shape)
 
-
-def mlp(words):
-    train_set, target_set = convert_to_train_set(words)
+def mlp(train_set, target_set):
+    # train_set, target_set = convert_to_train_set(words)
     # 每个char 用二维embbeding 表示
-    embeding_dimension = 2
     C = torch.randn(27, embeding_dimension, requires_grad=True)
     num_of_input = num_of_chars * embeding_dimension
-    num_of_nerons = 100
     # layer one
     W1 = torch.randn((num_of_input, num_of_nerons), requires_grad=True)
     B1 = torch.randn(num_of_nerons, requires_grad=True)
@@ -58,7 +59,6 @@ def mlp(words):
     B2 = torch.randn(27, requires_grad=True)
     learning_rate = 0.1
     parameters = [C, W1, B1, W2, B2]
-    final_loss = 0.0
     for i in range(30000):
         """mini batch: 随机取出几个"""
         idx = torch.randint(0, train_set.shape[0], (64,))
@@ -84,18 +84,43 @@ def mlp(words):
         for param in parameters:
             param.grad = None
         loss = F.cross_entropy(logits, target_mini_batch)
-        final_loss = loss.item()
         loss.backward()
         for param in parameters:
             param.data += -(learning_rate * param.grad)
-    print(f"final loss is: {final_loss}")
     return [C, W1, B1, W2, B2]
 
-def word_generator(words):
-    C, W1, B1, W2, B2 = mlp(words)
+
+shuffle_words = random.shuffle(words)
+length_words = len(words)
+len1 = int(0.8 * length_words)
+len2 = int(0.9 * length_words)
+
+x_train, y_train = convert_to_train_set(words[:len1])
+x_dev, y_dev     = convert_to_train_set(words[len1:len2])
+x_test, y_test   = convert_to_train_set(words[len2:])
+
+trained_mlp = mlp(x_dev, y_dev)
+
+
+def calculate_loss(x_set, y_set):
+    C, W1, B1, W2, B2 = trained_mlp
+    embeding = C[x_set]
+    h = embeding.view(-1, num_of_input)
+    layer_1 = torch.tanh(h @ W1 + B1)
+    logits = layer_1 @ W2 + B2
+    return F.cross_entropy(logits, y_set)
+
+
+print(f"loss of train set: {calculate_loss(x_train, y_train)}")
+print(f"loss of dev set: {calculate_loss(x_dev, y_dev)}")
+print(f"loss of test set: {calculate_loss(x_test, y_test)}")
+
+
+def word_generator(num_of_samples=10):
+    C, W1, B1, W2, B2 = trained_mlp
     names = []
 
-    for _ in range(10):
+    for _ in range(num_of_samples):
         context = [0] * num_of_chars
         out = []
         while True:
@@ -103,13 +128,18 @@ def word_generator(words):
             h = torch.tanh(embeding.view(1, -1) @ W1 + B1)
             logits = h @ W2 + B2
             probs = F.softmax(logits, dim=1)
-            ix = torch.multinomial(probs, num_samples=1,).item()
+            ix = torch.multinomial(
+                probs,
+                num_samples=1,
+            ).item()
             out.append(ix)
             context = context[1:] + [ix]
-            if(ix == 0):
+            if ix == 0:
                 break
-        names.append(''.join(itos[i] for i in out))
+        names.append("".join(itos[i] for i in out))
     return names
+
+
 """
 报错了：
 因为 embeding = C[train_set]（第 51 行）和 h = embeding.view(...)（第 71 行）写在了循环外面，第二次 backward() 时要重走一段已经被释放的计算图。
@@ -121,5 +151,5 @@ PyTorch 每做一次运算就在计算图里记一个节点。C → embeding →
 修法：把 embedding 查表和 view 挪进循环，让每轮前向都从 C 重新建完整的图：
 
 """
-for name in word_generator(words):
+for name in word_generator(5):
     print(name)
