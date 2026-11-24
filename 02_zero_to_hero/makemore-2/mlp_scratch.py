@@ -1,3 +1,4 @@
+import math
 import random
 
 import torch
@@ -46,6 +47,16 @@ def convert_to_train_set(words):
 
 x, y = convert_to_train_set(words[:2])
 
+
+def calculate_loss(x_set, y_set, mlp):
+    C, W1, B1, W2, B2 = mlp
+    embeding = C[x_set]
+    h = embeding.view(-1, num_of_input)
+    layer_1 = torch.tanh(h @ W1 + B1)
+    logits = layer_1 @ W2 + B2
+    return F.cross_entropy(logits, y_set)
+
+
 def mlp(train_set, target_set):
     # train_set, target_set = convert_to_train_set(words)
     # 每个char 用二维embbeding 表示
@@ -57,11 +68,34 @@ def mlp(train_set, target_set):
     # layer two: 输出27的字符
     W2 = torch.randn((num_of_nerons, 27), requires_grad=True)
     B2 = torch.randn(27, requires_grad=True)
-    learning_rate = 0.1
+    # learning_rate = 0.1
+    num_of_steps = 30000
+
+
     parameters = [C, W1, B1, W2, B2]
-    for i in range(30000):
+    
+    # no tained loss: 26.405664443969727, uniform: 3.295836866004329
+    print(
+        f"no tained loss: {calculate_loss(train_set, target_set, parameters)}, uniform: {-math.log(1 / 27)}"
+    )
+    # W2 = W2 * 0.01
+    # B2 = torch.zeros(27, requires_grad= True, dtype=torch.float)
+    """
+    W2 @ n + b 要越小越好 所以 想办法让这两个小
+    """
+    with torch.no_grad():
+        W2 *= 0.01
+        B2.zero_()
+    # no tained loss after opmize: 3.2845265865325928, uniform: 3.295836866004329
+    print(
+        f"no tained loss after opmize: {calculate_loss(train_set, target_set, parameters)}, uniform: {-math.log(1 / 27)}"
+    )
+    lr_start, lr_end = 0.1, 0.01
+
+    for i in range(num_of_steps):
         """mini batch: 随机取出几个"""
         idx = torch.randint(0, train_set.shape[0], (64,))
+        learning_rate = lr_start * (lr_end / lr_start) ** (i / num_of_steps)
         train_mini_batch = train_set[idx]
         target_mini_batch = target_set[idx]
         """forward: """
@@ -90,30 +124,21 @@ def mlp(train_set, target_set):
     return [C, W1, B1, W2, B2]
 
 
-shuffle_words = random.shuffle(words)
+random.shuffle(words)
 length_words = len(words)
 len1 = int(0.8 * length_words)
 len2 = int(0.9 * length_words)
 
 x_train, y_train = convert_to_train_set(words[:len1])
-x_dev, y_dev     = convert_to_train_set(words[len1:len2])
-x_test, y_test   = convert_to_train_set(words[len2:])
+x_dev, y_dev = convert_to_train_set(words[len1:len2])
+x_test, y_test = convert_to_train_set(words[len2:])
 
 trained_mlp = mlp(x_train, y_train)
 
 
-def calculate_loss(x_set, y_set):
-    C, W1, B1, W2, B2 = trained_mlp
-    embeding = C[x_set]
-    h = embeding.view(-1, num_of_input)
-    layer_1 = torch.tanh(h @ W1 + B1)
-    logits = layer_1 @ W2 + B2
-    return F.cross_entropy(logits, y_set)
-
-
-print(f"loss of train set: {calculate_loss(x_train, y_train)}")
-print(f"loss of dev set: {calculate_loss(x_dev, y_dev)}")
-print(f"loss of test set: {calculate_loss(x_test, y_test)}")
+print(f"loss of train set: {calculate_loss(x_train, y_train, trained_mlp)}")
+print(f"loss of dev set: {calculate_loss(x_dev, y_dev, trained_mlp)}")
+print(f"loss of test set: {calculate_loss(x_test, y_test, trained_mlp)}")
 
 
 def word_generator(num_of_samples=10):
